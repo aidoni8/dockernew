@@ -1,32 +1,28 @@
-#
-# Ubuntu Dockerfile
-#
-# https://github.com/dockerfile/ubuntu
-#
+FROM ubuntu:jammy
+MAINTAINER Open Source Integrators <support@opensourceintegrators.com>
 
-# Pull base image.
-FROM ubuntu:20.04
+SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
-# Install.
-RUN \
-  sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list && \
-  apt-get update && \
-  apt-get -y upgrade && \
-  apt-get install -y build-essential && \
-  apt-get install -y software-properties-common && \
-  apt-get install -y byobu curl git htop man unzip vim wget && \
-  rm -rf /var/lib/apt/lists/*
+# Generate locale C.UTF-8
+ENV LANG C.UTF-8
+ENV TZ=UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Add files.
-ADD root/.bashrc /root/.bashrc
-ADD root/.gitconfig /root/.gitconfig
-ADD root/.scripts /root/.scripts
+RUN apt update \
+  && apt upgrade -y \
+  && apt install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    htop \
+    iotop \
+    rsync \
+    tar \
+    vim \
+    unzip \
+  && apt clean all \
+  && apt autoremove
 
-# Set environment variables.
-ENV HOME /root
-
-# Define working directory.
-WORKDIR /root
-
-# Define default command.
-CMD ["bash"]
+# Install dockerize for config files
+RUN curl -sfL $(curl -s https://api.github.com/repos/powerman/dockerize/releases/latest \
+  | grep -i /dockerize-$(uname -s)-$(uname -m)\" | cut -d\" -f4) \
+  | install /dev/stdin /usr/local/bin/dockerize
